@@ -10,7 +10,7 @@ export function Navbar() {
 
   const links = [
     { href: "/", label: "Home" },
-    { href: "/catalogo", label: "Catalogo" },
+    { href: "/catalog", label: "Catalogo" },
     { href: "/playlist", label: "Playlist" },
   ];
 
