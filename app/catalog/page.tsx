@@ -12,6 +12,7 @@ export const metadata: Metadata = {
     "Sfoglia tutte le lezioni di Ari Yoga. Filtra per livello e durata, scopri playlist e percorsi guidati.",
 };
 
+// Mock temporaneo: poi verrà dal DB
 const MOCK: Video[] = [
   {
     slug: "hatha-base-15",
@@ -55,6 +56,7 @@ export default function CatalogPage() {
   return (
     <main>
       <Navbar />
+
       <section className="bg-white">
         <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
           <h1 className="text-2xl font-bold">Catalogo</h1>
@@ -62,9 +64,11 @@ export default function CatalogPage() {
             Filtra per livello, durata e cerca tra le lezioni. Alcuni contenuti
             sono gratuiti.
           </p>
+
           <CatalogWithFilters initial={MOCK} />
         </div>
       </section>
+
       <Footer />
     </main>
   );
