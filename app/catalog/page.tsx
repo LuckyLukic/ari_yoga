@@ -1,55 +1,36 @@
 import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
 import {
   CatalogWithFilters,
-  type Video,
+  type Video as UI_Video,
 } from "@/components/catalog/CatalogWithFilters";
 
 export const metadata: Metadata = {
   title: "Catalogo lezioni",
   description:
-    "Sfoglia tutte le lezioni di Ari Yoga. Filtra per livello e durata, scopri playlist e percorsi guidati.",
+    "Sfoglia tutte le lezioni di Ari Yoga. Filtra per livello e durata.",
 };
 
-const MOCK: Video[] = [
-  {
-    slug: "hatha-base-15",
-    title: "Hatha base per iniziare",
-    durationMin: 15,
-    level: "Base",
-    premium: false,
-    thumb: "https://picsum.photos/seed/v1/800/450",
-    tags: ["hatha", "base"],
-  },
-  {
-    slug: "vinyasa-energia-25",
-    title: "Vinyasa energia mattutina",
-    durationMin: 25,
-    level: "Intermedio",
-    premium: true,
-    thumb: "https://picsum.photos/seed/v2/800/450",
-    tags: ["vinyasa", "energia"],
-  },
-  {
-    slug: "yin-rilassamento-35",
-    title: "Yin per rilassamento profondo",
-    durationMin: 35,
-    level: "Base",
-    premium: true,
-    thumb: "https://picsum.photos/seed/v3/800/450",
-    tags: ["yin", "rilassamento"],
-  },
-  {
-    slug: "power-avanzato-40",
-    title: "Power yoga avanzato full body",
-    durationMin: 40,
-    level: "Avanzato",
-    premium: true,
-    thumb: "https://picsum.photos/seed/v4/800/450",
-    tags: ["power", "avanzato"],
-  },
-];
+function mapToUI(v: any): UI_Video {
+  return {
+    slug: v.slug,
+    title: v.title,
+    durationMin: v.durationMin ?? 0,
+    level: (v.level as UI_Video["level"]) ?? "Base",
+    thumb: v.posterUrl ?? "https://picsum.photos/seed/fallback/800/450",
+    premium: Boolean(v.premium),
+    tags: [], // li aggiungeremo quando avremo i Tag
+  };
+}
 
-export default function CatalogPage() {
+export default async function CatalogPage() {
+  const videos = await prisma.video.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 60,
+  });
+
+  const initial = videos.map(mapToUI);
+
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
@@ -58,7 +39,7 @@ export default function CatalogPage() {
           Filtra per livello, durata e cerca tra le lezioni. Alcuni contenuti
           sono gratuiti.
         </p>
-        <CatalogWithFilters initial={MOCK} />
+        <CatalogWithFilters initial={initial} />
       </div>
     </section>
   );
