@@ -61,7 +61,7 @@ export function CatalogWithFilters({ initial }: { initial: Video[] }) {
             duration={`${v.durationMin} min`}
             level={v.level}
             thumb={v.thumb}
-            isPremium={v.premium}
+            isPremium={Boolean(v.premium)} // 👈 fix qui
           />
         ))}
       </div>

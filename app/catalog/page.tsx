@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import authOptions from "@/lib/auth";
 import {
   CatalogWithFilters,
   type Video as UI_Video,
 } from "@/components/catalog/CatalogWithFilters";
-import type { Video as DbVideo } from "@prisma/client";
 
 export const metadata: Metadata = {
   title: "Catalogo lezioni",
@@ -12,25 +13,46 @@ export const metadata: Metadata = {
     "Sfoglia tutte le lezioni di Ari Yoga. Filtra per livello e durata.",
 };
 
-function mapToUI(v: DbVideo): UI_Video {
+type DbVideoMinimal = {
+  slug: string;
+  title: string;
+  durationMin: number | null;
+  level: string | null;
+  posterUrl: string | null;
+  premium: boolean;
+};
+
+function mapToUI(v: DbVideoMinimal): UI_Video {
   return {
     slug: v.slug,
-    title: v.title,
+    title: v.title + (v.premium ? " ⭐" : ""),
     durationMin: v.durationMin ?? 0,
     level: (v.level as UI_Video["level"]) ?? "Base",
     thumb: v.posterUrl ?? "https://picsum.photos/seed/fallback/800/450",
-    premium: Boolean(v.premium),
-    tags: [], // li aggiungeremo quando avremo i Tag
+    premium: v.premium,
+    tags: v.premium ? ["Premium"] : [],
   };
 }
 
 export default async function CatalogPage() {
+  const session = await getServerSession(authOptions);
+  const isPremium = session?.user.plan === "premium";
+
   const videos = await prisma.video.findMany({
+    where: isPremium ? {} : { premium: false },
     orderBy: { createdAt: "desc" },
     take: 60,
+    select: {
+      slug: true,
+      title: true,
+      durationMin: true,
+      level: true,
+      posterUrl: true,
+      premium: true,
+    },
   });
 
-  const initial = videos.map(mapToUI);
+  const initial = videos.map((v) => mapToUI(v as DbVideoMinimal));
 
   return (
     <section className="bg-white">

@@ -1,6 +1,6 @@
 // /types/next-auth.d.ts
-import "next-auth"; // import "puro" per augmentare Session
-import "next-auth/jwt"; // import "puro" per augmentare JWT
+import "next-auth";
+import "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
@@ -9,9 +9,9 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      role?: "user" | "admin";
       plan?: "free" | "premium";
       profileCompleted?: boolean;
-      role?: "user" | "admin";
     };
   }
 }
@@ -19,8 +19,8 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     userId?: string;
+    role?: "user" | "admin";
     plan?: "free" | "premium";
     profileCompleted?: boolean;
-    role?: "user" | "admin";
   }
 }
