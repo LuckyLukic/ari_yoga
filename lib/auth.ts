@@ -2,10 +2,11 @@
 import { prisma } from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import type { NextAuthOptions } from "next-auth"; // solo tipo ok in v4
+import type { NextAuthOptions } from "next-auth";
+import bcrypt from "bcryptjs";
 
 const withGoogle =
-  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
+  !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
 
 const providers = [
   Credentials({
@@ -16,12 +17,30 @@ const providers = [
     },
     async authorize(creds) {
       if (!creds?.email || !creds?.password) return null;
-      // TODO: sostituisci con la tua logica di verifica
+
       const user = await prisma.user.findUnique({
         where: { email: creds.email },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          passwordHash: true,
+          emailVerified: true,
+        },
       });
-      if (!user) return null;
-      // password check fuori scope
+      if (!user?.passwordHash) return null;
+
+      // opzionale: blocca login se richiedi verifica email
+      if (
+        process.env.EMAIL_VERIFICATION_ENABLED === "true" &&
+        !user.emailVerified
+      ) {
+        return null;
+      }
+
+      const ok = await bcrypt.compare(creds.password, user.passwordHash);
+      if (!ok) return null;
+
       return { id: user.id, email: user.email, name: user.name };
     },
   }),
@@ -39,10 +58,19 @@ const authOptions: NextAuthOptions = {
   providers,
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
+
+  // IMPORTANTISSIMO: manda gli errori su /auth (es. OAuthAccountNotLinked) → niente 404
+  pages: {
+    signIn: "/auth",
+    error: "/auth",
+  },
+  // ⚠️ NON attivare questo in prod a meno che tu non sappia esattamente cosa fai
+  // allowDangerousEmailAccountLinking: true,
+
   callbacks: {
     async jwt({ token, user }) {
-      // on first sign-in attach userId
-      if (user && !token.userId) token.userId = user.id as string;
+      // al primo login
+      if (user && !token.userId) token.userId = (user as any).id as string;
 
       if (token.userId) {
         const dbUser = await prisma.user.findUnique({
@@ -66,9 +94,6 @@ const authOptions: NextAuthOptions = {
       }
       return session;
     },
-  },
-  pages: {
-    signIn: "/auth",
   },
 };
 

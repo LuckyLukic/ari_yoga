@@ -1,21 +1,25 @@
 // prisma/seed.ts
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role, Plan } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
 async function main() {
   const admin = await prisma.user.upsert({
     where: { email: "admin@ari.yoga" },
-    update: { role: "admin", plan: "premium", profileCompleted: true },
+    update: {
+      role: Role.admin,
+      plan: Plan.premium,
+      profileCompleted: true,
+    },
     create: {
       email: "admin@ari.yoga",
       name: "Admin",
-      role: "admin",
-      plan: "premium",
+      role: Role.admin,
+      plan: Plan.premium,
       profileCompleted: true,
     },
   });
 
-  // prisma/seed.ts (estratto)
   const v1 = await prisma.video.upsert({
     where: { slug: "saluto-al-sole-a" },
     update: {},
@@ -27,7 +31,7 @@ async function main() {
       level: "Base",
       premium: false,
       posterUrl: "https://picsum.photos/seed/saluto-a/800/450",
-      srcUrl: "https://example.com/video/saluto-a.mp4", // sostituisci con il tuo player/CF
+      srcUrl: "https://example.com/video/saluto-a.mp4",
       uploaderId: admin.id,
       tags: ["base", "riscaldamento"],
     },
@@ -59,7 +63,7 @@ async function main() {
       description: "Classe completa",
       durationMin: 30,
       level: "Intermedio",
-      premium: true, // premium
+      premium: true,
       posterUrl: "https://picsum.photos/seed/flow/800/450",
       srcUrl: "https://example.com/video/flow.mp4",
       uploaderId: admin.id,
@@ -83,11 +87,13 @@ async function main() {
     update: {},
     create: { playlistId: pl.id, videoId: v1.id, position: 1 },
   });
+
   await prisma.playlistItem.upsert({
     where: { playlistId_videoId: { playlistId: pl.id, videoId: v2.id } },
     update: {},
     create: { playlistId: pl.id, videoId: v2.id, position: 2 },
   });
+
   await prisma.playlistItem.upsert({
     where: { playlistId_videoId: { playlistId: pl.id, videoId: v3.id } },
     update: {},

@@ -2,6 +2,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 
 export default function RegisterPage() {
@@ -14,22 +15,46 @@ export default function RegisterPage() {
     setErr(null);
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const res = await fetch("/api/register", {
+    const name = String(form.get("name") || "");
+    const email = String(form.get("email") || "");
+    const password = String(form.get("password") || "");
+    const confirm = String(form.get("confirm") || "");
+
+    if (confirm && password !== confirm) {
+      setLoading(false);
+      setErr("Le password non coincidono");
+      return;
+    }
+
+    // 1) crea utente
+    const res = await fetch("/api/account/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.get("name"),
-        email: form.get("email"),
-        password: form.get("password"),
-      }),
+      body: JSON.stringify({ name, email, password }),
     });
     setLoading(false);
+
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       setErr(d.error || "Registrazione fallita");
       return;
     }
-    r.push("/login");
+
+    // 2) login automatico e smistamento su /post-login
+    const login = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+      callbackUrl: "/post-login",
+    });
+
+    if (login?.error) {
+      // se richiedi verifica email → torna al login
+      r.push("/auth?tab=login");
+      return;
+    }
+
+    r.push(login?.url || "/post-login");
   }
 
   return (
@@ -55,7 +80,16 @@ export default function RegisterPage() {
           required
           className="w-full rounded border p-2"
         />
+        {/* facoltativo: conferma password */}
+        <input
+          name="confirm"
+          type="password"
+          placeholder="Conferma password"
+          className="w-full rounded border p-2"
+        />
+
         {err && <p className="text-sm text-red-600">{err}</p>}
+
         <button
           disabled={loading}
           className="w-full rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"

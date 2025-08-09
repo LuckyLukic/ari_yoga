@@ -16,18 +16,22 @@ export default function LoginPage() {
     setErr(null);
     setLoading(true);
     const form = new FormData(e.currentTarget);
+
     const res = await signIn("credentials", {
       redirect: false,
       email: form.get("email"),
       password: form.get("password"),
-      callbackUrl: (params.get("callbackUrl") as string) ?? "/",
+      // default: /post-login (smista onboarding vs home)
+      callbackUrl: (params.get("callbackUrl") as string) ?? "/post-login",
     });
+
     setLoading(false);
     if (!res || res.error) {
       setErr("Credenziali non valide");
       return;
     }
-    r.push(res.url || "/");
+    // Se redirect:false, gestiamo noi
+    r.push(res.url || "/post-login");
   }
 
   return (
@@ -58,17 +62,17 @@ export default function LoginPage() {
           {loading ? "Accesso..." : "Accedi"}
         </button>
       </form>
-      {/* Divider */}
+
       <div className="my-6 h-px w-full bg-gray-200" />
 
-      {/* Google Login */}
+      {/* Google Login → post-login */}
       <button
-        onClick={() => signIn("google", { callbackUrl: "/" })}
+        onClick={() => signIn("google", { callbackUrl: "/post-login" })}
         className="mt-4 w-full rounded border px-4 py-2"
       >
         Accedi con Google
       </button>
-      {/* Callout per la registrazione */}
+
       <p className="text-sm text-gray-700">
         Non hai un account?{" "}
         <Link href="/register" className="font-medium underline">
