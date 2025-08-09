@@ -1,6 +1,8 @@
+// app/(auth)/register/page.tsx
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const r = useRouter();
@@ -56,11 +58,20 @@ export default function RegisterPage() {
         {err && <p className="text-sm text-red-600">{err}</p>}
         <button
           disabled={loading}
-          className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
+          className="w-full rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
         >
           {loading ? "Creazione..." : "Registrati"}
         </button>
       </form>
+
+      <div className="my-6 h-px w-full bg-gray-200" />
+
+      <p className="text-sm text-gray-700">
+        Hai già un account?{" "}
+        <Link href="/login" className="font-medium underline">
+          Accedi
+        </Link>
+      </p>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import {
   CatalogWithFilters,
   type Video as UI_Video,
 } from "@/components/catalog/CatalogWithFilters";
+import type { Video as DbVideo } from "@prisma/client";
 
 export const metadata: Metadata = {
   title: "Catalogo lezioni",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     "Sfoglia tutte le lezioni di Ari Yoga. Filtra per livello e durata.",
 };
 
-function mapToUI(v: any): UI_Video {
+function mapToUI(v: DbVideo): UI_Video {
   return {
     slug: v.slug,
     title: v.title,
