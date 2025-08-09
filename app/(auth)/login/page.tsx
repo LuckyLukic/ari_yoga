@@ -33,7 +33,6 @@ export default function LoginPage() {
   return (
     <section className="mx-auto max-w-md px-4 py-12">
       <h1 className="text-2xl font-bold">Accedi</h1>
-
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <input
           name="email"
@@ -59,10 +58,16 @@ export default function LoginPage() {
           {loading ? "Accesso..." : "Accedi"}
         </button>
       </form>
-
       {/* Divider */}
       <div className="my-6 h-px w-full bg-gray-200" />
 
+      {/* Google Login */}
+      <button
+        onClick={() => signIn("google", { callbackUrl: "/" })}
+        className="mt-4 w-full rounded border px-4 py-2"
+      >
+        Accedi con Google
+      </button>
       {/* Callout per la registrazione */}
       <p className="text-sm text-gray-700">
         Non hai un account?{" "}

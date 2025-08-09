@@ -1,42 +1,141 @@
 // prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+enum Role {
+  user
+  admin
+}
+
+enum Plan {
+  free
+  premium
+}
+
+model User {
+  id               String   @id @default(cuid())
+  name             String?
+  email            String?  @unique
+  emailVerified    DateTime?
+  image            String?
+
+  // App
+  role             String   @default("user")   // "user" | "admin"
+  plan             String   @default("free")   // "free" | "premium"
+  address          String?
+  city             String?
+  zip              String?
+  taxCode          String?
+  phone            String?
+  consents         Json?
+  profileCompleted Boolean  @default(false)
+
+  // 🔐 credenziali per Credentials provider
+  passwordHash     String?  @db.Text
+
+  // Timestamps
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  accounts         Account[]
+  sessions         Session[]
+  playlists        Playlist[]
+  videos           Video[]  @relation("UploaderVideos")
+}
+
+/// NextAuth - provider account
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// NextAuth - user session
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// NextAuth - email magic link
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Video {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  description String?
-  durationMin Int?
-  level       String   // Base | Intermedio | Avanzato
-  premium     Boolean  @default(false)
-  posterUrl   String?
-  srcUrl      String?
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  description   String?  @db.Text
+
+  // 👇 campi richiesti dal tuo codice
+  durationMin   Int?              // usi v.durationMin ?? 0
+  level         String?           // usi v.level come stringa ("Base", etc.)
+  premium       Boolean  @default(false) // usi v.premium
+  posterUrl     String?
+  srcUrl        String?
+
+  // opzionale: visibilità/tag
+  visibility    String   @default("public")
+  tags          String[] @default([])
+
+  uploaderId    String?
+  uploader      User?    @relation("UploaderVideos", fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   playlistItems PlaylistItem[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
+
 
 model Playlist {
-  id          String         @id @default(cuid())
-  slug        String         @unique
+  id          String        @id @default(cuid())
   title       String
-  description String?
-  items       PlaylistItem[]
+  slug        String        @unique
+  description String?       @db.Text
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Owner: deve essere un admin (enforced lato app per semplicità)
+  ownerId     String
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  items       PlaylistItem[]
 }
 
+/// Join table ordinata
 model PlaylistItem {
   id         String   @id @default(cuid())
   playlistId String
@@ -46,58 +145,8 @@ model PlaylistItem {
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
-  @@unique([playlistId, videoId])
-  @@index([playlistId, position])
+  createdAt  DateTime @default(now())
+
+  @@unique([playlistId, videoId])    // un video una volta per playlist
+  @@index([playlistId, position])    // ordinamento efficiente
 }
-
-model User {
-  id            String   @id @default(cuid())
-  name          String?
-  email         String?  @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?   // usato solo per email+password
-
-  accounts      Account[]
-  sessions      Session[]
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-

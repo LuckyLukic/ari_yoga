@@ -1,8 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { SessionProvider } from "@/components/SessionProvider";
+import Navbar from "@/components/Navbar"; // se Navbar è default
+import Footer from "@/components/Footer"; // se Footer è default
+import SessionProvider from "@/components/SessionProvider"; // <-- senza {}
 
 export const metadata: Metadata = {
   title: "Ari Yoga",

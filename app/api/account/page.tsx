@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import authOptions from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { DeleteAccountButton } from "@/components/account/DeleteAccountButton";
@@ -67,7 +67,7 @@ export default async function AccountPage() {
         <div className="rounded-2xl border bg-white p-5 md:col-span-2">
           <h2 className="text-lg font-semibold">Sicurezza</h2>
           <p className="mt-2 text-sm text-gray-600">
-            A breve potrai cambiare password e gestire l'accesso Google.
+            A breve potrai cambiare password e gestire l`&apos;`accesso Google.
           </p>
 
           {/* Danger zone */}

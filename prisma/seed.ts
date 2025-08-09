@@ -1,92 +1,100 @@
 // prisma/seed.ts
 import { PrismaClient } from "@prisma/client";
-
 const prisma = new PrismaClient();
 
 async function main() {
-  // pulizia per evitare duplicati
-  await prisma.playlistItem.deleteMany();
-  await prisma.playlist.deleteMany();
-  await prisma.video.deleteMany();
-
-  // video demo
-  await prisma.video.createMany({
-    data: [
-      {
-        slug: "hatha-base-15",
-        title: "Hatha base per iniziare",
-        durationMin: 15,
-        level: "Base",
-        premium: false,
-        posterUrl: "https://picsum.photos/seed/v1/1200/675",
-        srcUrl:
-          "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-        description:
-          "Lezione introduttiva di Hatha Yoga per sciogliere il corpo e il respiro.",
-      },
-      {
-        slug: "vinyasa-energia-25",
-        title: "Vinyasa energia mattutina",
-        durationMin: 25,
-        level: "Intermedio",
-        premium: true,
-        posterUrl: "https://picsum.photos/seed/v2/1200/675",
-        srcUrl:
-          "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-        description: "Flusso Vinyasa dinamico per risvegliare la muscolatura.",
-      },
-      {
-        slug: "yin-rilassamento-35",
-        title: "Yin per rilassamento profondo",
-        durationMin: 35,
-        level: "Base",
-        premium: true,
-        posterUrl: "https://picsum.photos/seed/v3/1200/675",
-        srcUrl:
-          "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-        description: "Sequenza Yin per distendere e allungare in profondità.",
-      },
-      {
-        slug: "power-avanzato-40",
-        title: "Power yoga avanzato full body",
-        durationMin: 40,
-        level: "Avanzato",
-        premium: true,
-        posterUrl: "https://picsum.photos/seed/v4/1200/675",
-        srcUrl:
-          "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-        description: "Lezione intensa per lavorare su forza e resistenza.",
-      },
-    ],
-  });
-
-  // playlist demo
-  const playlist = await prisma.playlist.create({
-    data: {
-      slug: "starter",
-      title: "Starter — Inizia da qui",
-      description: "Una piccola raccolta per iniziare la pratica.",
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@ari.yoga" },
+    update: { role: "admin", plan: "premium", profileCompleted: true },
+    create: {
+      email: "admin@ari.yoga",
+      name: "Admin",
+      role: "admin",
+      plan: "premium",
+      profileCompleted: true,
     },
   });
 
-  // collega due video alla playlist
-  const v1 = await prisma.video.findUnique({
-    where: { slug: "hatha-base-15" },
-  });
-  const v2 = await prisma.video.findUnique({
-    where: { slug: "vinyasa-energia-25" },
+  // prisma/seed.ts (estratto)
+  const v1 = await prisma.video.upsert({
+    where: { slug: "saluto-al-sole-a" },
+    update: {},
+    create: {
+      title: "Saluto al Sole A",
+      slug: "saluto-al-sole-a",
+      description: "Sequenza base",
+      durationMin: 10,
+      level: "Base",
+      premium: false,
+      posterUrl: "https://picsum.photos/seed/saluto-a/800/450",
+      srcUrl: "https://example.com/video/saluto-a.mp4", // sostituisci con il tuo player/CF
+      uploaderId: admin.id,
+      tags: ["base", "riscaldamento"],
+    },
   });
 
-  if (v1 && v2) {
-    await prisma.playlistItem.createMany({
-      data: [
-        { playlistId: playlist.id, videoId: v1.id, position: 1 },
-        { playlistId: playlist.id, videoId: v2.id, position: 2 },
-      ],
-    });
-  }
+  const v2 = await prisma.video.upsert({
+    where: { slug: "respiro-consapevole" },
+    update: {},
+    create: {
+      title: "Respiro Consapevole",
+      slug: "respiro-consapevole",
+      description: "Pranayama introduttivo",
+      durationMin: 8,
+      level: "Base",
+      premium: false,
+      posterUrl: "https://picsum.photos/seed/respiro/800/450",
+      srcUrl: "https://example.com/video/respiro.mp4",
+      uploaderId: admin.id,
+      tags: ["pranayama", "principianti"],
+    },
+  });
 
-  console.log("✅ Seed completato!");
+  const v3 = await prisma.video.upsert({
+    where: { slug: "flow-vinyasa-intermedio" },
+    update: {},
+    create: {
+      title: "Flow Vinyasa Intermedio",
+      slug: "flow-vinyasa-intermedio",
+      description: "Classe completa",
+      durationMin: 30,
+      level: "Intermedio",
+      premium: true, // premium
+      posterUrl: "https://picsum.photos/seed/flow/800/450",
+      srcUrl: "https://example.com/video/flow.mp4",
+      uploaderId: admin.id,
+      tags: ["vinyasa", "intermedio"],
+    },
+  });
+
+  const pl = await prisma.playlist.upsert({
+    where: { slug: "inizia-da-qui" },
+    update: {},
+    create: {
+      title: "Inizia da qui",
+      slug: "inizia-da-qui",
+      description: "Percorso consigliato per iniziare",
+      ownerId: admin.id,
+    },
+  });
+
+  await prisma.playlistItem.upsert({
+    where: { playlistId_videoId: { playlistId: pl.id, videoId: v1.id } },
+    update: {},
+    create: { playlistId: pl.id, videoId: v1.id, position: 1 },
+  });
+  await prisma.playlistItem.upsert({
+    where: { playlistId_videoId: { playlistId: pl.id, videoId: v2.id } },
+    update: {},
+    create: { playlistId: pl.id, videoId: v2.id, position: 2 },
+  });
+  await prisma.playlistItem.upsert({
+    where: { playlistId_videoId: { playlistId: pl.id, videoId: v3.id } },
+    update: {},
+    create: { playlistId: pl.id, videoId: v3.id, position: 3 },
+  });
+
+  console.log("Seed completato ✔");
 }
 
 main()
